@@ -34,7 +34,6 @@ class robot_model:
         alpha   = [0.0, 0.0]
         self.dh_params = {"theta": theta_0, "a": a, "d": d, "alpha": alpha}
 
-                # << PUBLIC >> #
         # Dlugosc ramienia [m]
         self.L  = [L1, L2] 
         # Polowa dlugosci ramienia [m]
@@ -118,7 +117,6 @@ class robot_model:
         self.__p_target[0] = p[0]
         self.__p_target[1] = p[1]
 
-        # Cosine Theorem [Beta]: eq (1)
         cosT_beta_numerator   = ((self.dh_params["a"][0]**2) + (self.__p_target[0]**2 + self.__p_target[1]**2) - (self.dh_params["a"][1]**2))
         cosT_beta_denumerator = (2*self.dh_params["a"][0]*np.sqrt(self.__p_target[0]**2 + self.__p_target[1]**2))
 
@@ -151,27 +149,26 @@ class robot_model:
     def generate_trajectory(self, trajectory_point):
 
         self.__p_target = trajectory_point[0], trajectory_point[1]
-         
-        # self.inverse_kinematics(self.__p_target)
-        # self.__theta_target = self.theta
-        x   = []
-        y   = []
-        
-        # self.inverse_kinematics(trajectory_point)
+
         start_theta  = self.dh_params["theta"]
 
-        
-        self.step()
+        self.inverse_kinematics(self.__p_target)
+        self.__theta_target = self.theta
+        x   = []
+        y   = []
+
+        self.inverse_kinematics(trajectory_point)
+
+        # self.step()
 
         self.inverse_kinematics(trajectory_point)
         target_theta = self.__theta_target
 
-        # start_theta_dt  = np.linspace(start_theta[0], target_theta[0], 100)
-        # target_theta_dt = np.linspace(start_theta[1], target_theta[1], 100)
+        start_theta_dt  = np.linspace(start_theta[0], target_theta[0], 100)
+        target_theta_dt = np.linspace(start_theta[1], target_theta[1], 100)
 
-
-        start_theta_dt  = self.state[0]
-        target_theta_dt = self.state[1]
+        # start_theta_dt  = self.state[0]
+        # target_theta_dt = self.state[1]
 
         for i in range(len(start_theta_dt)):
             self.forward_kinematics([start_theta_dt[i], target_theta_dt[i]])
@@ -179,15 +176,11 @@ class robot_model:
             y.append(self.p[1])
         
         # x, y = self.position()
-
         self.trajectory[0] = x
-        self.trajectory[1] = y
-        
+        self.trajectory[1] = y        
 
     def step(self):
-        """execute one time step of length dt and update state"""
         self.state = integrate.odeint(self.dstate_dt, self.state, np.linspace(0, 128, 128))
-        print(self.state[0])
         self.time_elapsed += self.dt
 
     def __animation_data_generation(self):
@@ -220,12 +213,12 @@ class robot_model:
         return [self.__line[0], self.__line[1], self.__line[2], self.__line[3]]
 
 def animate_animation():
-    # p1, p2 = input("WPISZ PORZADANY PUNKT X (OD 0 DO 2): "), input("WPISZ PORZADANY PUNKT Y (OD 0 DO 2): ")
+    p1, p2 = input("WPISZ PORZADANY PUNKT X (OD 0 DO 2): "), input("WPISZ PORZADANY PUNKT Y (OD 0 DO 2): ")
 
     robot2D = robot_model([240.0, 0.0, 240.0, 0.0])
     dt = 1./30 # 30 fps
 
-    robot2D.generate_trajectory([-0.5, 0.5])  #([p1, p2])
+    robot2D.generate_trajectory([p1, p2]) #([-0.5, 0.5])
 
     line, = robot2D.ax.plot([], [], 'o-', lw=2, animated=True)
     time_text = robot2D.ax.text(0.02, 0.95, '', transform=robot2D.ax.transAxes)
